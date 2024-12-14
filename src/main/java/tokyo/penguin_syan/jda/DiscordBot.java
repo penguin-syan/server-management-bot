@@ -3,6 +3,7 @@ package tokyo.penguin_syan.jda;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.net.ssl.SSLHandshakeException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import net.dv8tion.jda.api.JDA;
@@ -16,12 +17,15 @@ import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import tokyo.penguin_syan.PropertiesReader;
 import tokyo.penguin_syan.aws.Ec2ControlException;
 import tokyo.penguin_syan.aws.Ec2Controller;
+import tokyo.penguin_syan.proxmox.ProxmoxControlException;
+import tokyo.penguin_syan.proxmox.ProxmoxController;
 
 public class DiscordBot extends ListenerAdapter {
     // TODO: slf4jの導入
     private static Logger logger = LogManager.getLogger();
-    private static JDA jda = null;
-    private static Ec2Controller aws = null;
+    private static JDA jda;
+    private static Ec2Controller aws;
+    private static ProxmoxController prmx;
     private static PropertiesReader propertiesReader;
 
     /**
@@ -42,6 +46,7 @@ public class DiscordBot extends ListenerAdapter {
                 .build();
 
         aws = new Ec2Controller();
+        prmx = new ProxmoxController();
 
         // コマンド変更に対応するため、過去にDiscordへ登録されたコマンドを削除.
         CommandListUpdateAction commands = jda.updateCommands();
@@ -72,11 +77,20 @@ public class DiscordBot extends ListenerAdapter {
             if (Command.BOOT.getCommand().equals(event.getName())) {
                 logger.info("サーバの起動を開始します [Executed " + event.getMember().getUser() + "]");
                 aws.startInstance(ec2InstanceId);
+                prmx.startVM();
                 event.reply("サーバの起動を開始します").queue();
             } else if (Command.SHUTDOWN.getCommand().equals(event.getName())) {
                 logger.info("サーバの停止を開始します [Executed " + event.getMember().getUser() + "]");
                 aws.stopInstance(ec2InstanceId);
+                prmx.stopVM();
                 event.reply("サーバの停止を開始します").queue();
+            } else if (Command.KEEP.getCommand().equals(event.getName())) {
+                boolean isVmRunning = prmx.isVmRunning();
+                if (isVmRunning) {
+                    event.reply("vm起動済み").queue();
+                } else {
+                    event.reply("vm起動前").queue();
+                }
             } else {
                 throw new Exception(
                         String.format("イベントハンドラ上で未定義のコマンドが送信されました（%s）", event.getName()));
@@ -84,6 +98,12 @@ public class DiscordBot extends ListenerAdapter {
         } catch (Ec2ControlException e) {
             logger.warn(String.format("インスタンスの操作を中断しました（%s）", e.getMessage()));
             event.reply(e.getMessage()).queue();
+        } catch (ProxmoxControlException e) {
+            logger.warn(String.format("VMの操作を中断しました（%s）", e.getMessage()));
+            event.reply(e.getMessage()).queue();
+        } catch (SSLHandshakeException e) {
+            logger.error("リクエスト先の証明書が信頼できません", e.getMessage());
+            event.reply("リクエストの処理に失敗しました（TLS証明書 認証エラー）").queue();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             event.reply("想定外のエラーが発生しました").queue();

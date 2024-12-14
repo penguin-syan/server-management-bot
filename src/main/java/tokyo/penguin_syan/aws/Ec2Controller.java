@@ -16,10 +16,9 @@ import tokyo.penguin_syan.PropertiesReader;
 
 public class Ec2Controller {
     private Region region;
-    private PropertiesReader propertiesReader;
-
     private Ec2Client ec2Client;
 
+    private static PropertiesReader propertiesReader;
     private static Logger logger = LogManager.getLogger();
 
     /**
@@ -52,7 +51,7 @@ public class Ec2Controller {
             logger.info("AWS#startInstance canceled (pending or running)");
             throw new Ec2ControlException("既に起動済みです");
         } else if (instanceStatus == 48) {
-            logger.warn("AWS#stopInstance canceled (terminated)");
+            logger.warn("AWS#startInstance canceled (terminated)");
             throw new Ec2ControlException("インスタンスが削除されています");
         }
 
@@ -61,7 +60,7 @@ public class Ec2Controller {
                     StartInstancesRequest.builder().instanceIds(instanceId).build();
             ec2Client.startInstances(startRequest);
         } catch (Exception e) {
-            logger.error("AWS#stopInstance abort");
+            logger.error("AWS#startInstance abort");
             throw e;
         }
 
