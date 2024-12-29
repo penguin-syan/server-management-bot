@@ -2,6 +2,8 @@ package tokyo.penguin_syan.proxmox.httpclient;
 
 import java.io.IOException;
 import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import lombok.Getter;
 
 public class HttpResponse {
@@ -12,8 +14,8 @@ public class HttpResponse {
     String responseBody;
 
     public HttpResponse(int responseCode, HttpEntity responseBody)
-            throws UnsupportedOperationException, IOException {
+            throws UnsupportedOperationException, IOException, ParseException {
         this.responseCode = responseCode;
-        this.responseBody = new String(responseBody.getContent().readAllBytes());
+        this.responseBody = EntityUtils.toString(responseBody);
     }
 }
