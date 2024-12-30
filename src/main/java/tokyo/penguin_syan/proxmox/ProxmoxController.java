@@ -9,6 +9,7 @@ import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import tokyo.penguin_syan.PropertiesReader;
 import tokyo.penguin_syan.proxmox.httpclient.HttpRequestType;
@@ -30,105 +31,19 @@ public class ProxmoxController {
 
     /**
      * 
-     * @throws Exception
-     */
-    public void startVM() throws Exception {
-        logger.info("ProxmoxController#startVM start");
-
-        if (!isVmRunning()) {
-            // 起動処理
-            httpRequest(ApiRequestType.START.getRequestType(),
-                    apiBaseUrl + ApiRequestType.START.getPathname());
-        } else {
-            // 多重に起動処理は送らない
-            logger.info("ProxmoxController#startVM canceled (running)");
-            throw new ProxmoxControlException("既に起動済みです");
-        }
-
-        logger.info("ProxmoxController#startVM end");
-    }
-
-    /**
-     * 
-     * @throws Exception
-     */
-    public void stopVM() throws Exception {
-        logger.info("ProxmoxController#stopVM start");
-
-        if (isVmRunning()) {
-            // 停止処理
-            httpRequest(ApiRequestType.STOP.getRequestType(),
-                    apiBaseUrl + ApiRequestType.STOP.getPathname());
-        } else {
-            // 多重に停止処理は送らない
-            logger.info("ProxmoxController#stopVM canceled (stopped)");
-            throw new ProxmoxControlException("既に停止済みです");
-        }
-
-        logger.info("ProxmoxController#stopVM end");
-    }
-
-    /**
-     * 
-     * @return
-     * @throws Exception
-     */
-    public boolean isVmRunning() throws Exception {
-        logger.info("ProxmoxController#VMstatus start");
-
-        // ステータス確認
-        String response = httpRequest(ApiRequestType.STATUS.getRequestType(),
-                apiBaseUrl + ApiRequestType.STATUS.getPathname());
-        JSONObject responseJson = new JSONObject(response);
-
-        // 結果ごとの戻り値作成
-        switch (responseJson.getJSONObject("data").getString("status")) {
-            case "running":
-                logger.info("ProxmoxController#VMstatus end (running)");
-                return true;
-            case "stopped":
-                logger.info("ProxmoxController#VMstatus end (stopped)");
-                return false;
-            default:
-                logger.error(String.format("想定外のステータスが返されました",
-                        responseJson.getJSONObject("data").getString("status")));
-                logger.info("ProxmoxController#VMstatus end (abort)");
-                throw new Exception("想定外のステータスが返されました");
-        }
-
-
-
-    }
-
-    public boolean isOsRunning() {
-        logger.info("ProxmoxController#isOsRunning start");
-
-        // OS起動状況確認
-        try {
-            String response = httpRequest(ApiRequestType.EXEC.getRequestType(),
-                    apiBaseUrl + ApiRequestType.EXEC.getPathname(), null,
-                    ContentType.APPLICATION_JSON);
-        } catch (Exception e) {
-            if (e.getMessage().contains("Response code is not 200"))
-                logger.warn(e.getMessage(), e);
-            logger.info("ProxmoxController#isOsRunning end");
-            return false;
-        }
-        return false;
-    }
-
-    /**
-     * 
      * @param commands 実行するコマンド
      * @param contentType
      * @return
      * @throws Exception
      */
-    public int execCommand(String commands, ContentType contentType) throws Exception {
+    public int execCommand(String[] command, ContentType contentType) throws Exception {
         logger.info("ProxmoxController#execCommand start");
 
+        String requestBody = execRequestBody(command);
+        logger.debug(requestBody);
+
         String response = httpRequest(ApiRequestType.EXEC.getRequestType(),
-                apiBaseUrl + ApiRequestType.EXEC.getPathname(), commands, contentType);
+                apiBaseUrl + ApiRequestType.EXEC.getPathname(), requestBody, contentType);
 
         JSONObject responseJson = new JSONObject(response);
         int execPid = Integer.parseInt(responseJson.getJSONObject("data").get("pid").toString());
@@ -155,6 +70,26 @@ public class ProxmoxController {
         logger.info("ProxmoxController#execStatus end");
         return response;
     }
+
+
+    /**
+     * 
+     * @param command
+     * @return
+     */
+    private String execRequestBody(String[] command) {
+        logger.info("ProxmoxController#execRequestBody start");
+
+        JSONObject requestBody = new JSONObject();
+        JSONArray commandValue = new JSONArray(command);
+        requestBody.put("command", commandValue);
+
+        String result = requestBody.toString();
+
+        logger.info("ProxmoxController#execRequestBody end");
+        return result;
+    }
+
 
     /**
      * 

@@ -1,11 +1,5 @@
 #! /bin/bash
 
-if [ $# -ne 1 ]; then
-    echo 第1引数（セーブデータパス）が不足しています
-    exit 1
-fi
-
-
 echo
 echo "#########################"
 echo "# アップデートの要否確認"
@@ -44,14 +38,21 @@ fi
 rm $filename
 
 
-echo
-echo "###################"
-echo "# セーブデータ配置"
-echo "###################"
-if [ ! -d /opt/factorio-headless/savedata ]; then
-   mkdir -p /opt/factorio-headless/savedata
+if [ $# = 1 ]; then
+   echo
+   echo "###################"
+   echo "# セーブデータ配置"
+   echo "###################"
+   if [ ! -d /opt/factorio-headless/savedata ]; then
+      mkdir -p /opt/factorio-headless/savedata
+   fi
+   if [ "${1:0:5}" == "s3://" ] ; then
+      sudo -u factorio aws s3 cp $1 /opt/factorio-headless/savedata/savedata.zip
+   else
+      cp $1 /opt/factorio-headless/savedata/savedata.zip
+   fi
 fi
-cp $1 /opt/factorio-headless/savedata/savedata.zip
+
 ls -l /opt/factorio-headless/savedata/savedata.zip
 
 echo

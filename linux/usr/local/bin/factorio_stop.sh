@@ -5,14 +5,13 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-
 echo
 echo "#######################"
 echo "# Factorioサーバの停止"
 echo "#######################"
 
 sudo systemctl stop factorio
-systemctl status --no-pager factorio
+#systemctl status --no-pager factorio
 
 
 # savedataが保存されたことを確認する 3秒間隔 1分間
@@ -31,13 +30,11 @@ if [ $i -ge 20 ]; then
     exit 1
 fi
 
-# tmp配下に持っていき、read権限を付与する
 echo "#####################"
 echo "# セーブデータの確保"
 echo "#####################"
-cp /opt/factorio-headless/savedata/savedata.zip $1
-chmod a+r $1
-ls -l $1
+sudo -u factorio aws s3 cp /opt/factorio-headless/savedata/savedata.zip $1savedata_`date +%Y%m%d%H%M%S`.zip
+#cp /opt/factorio-headless/savedata/savedata.zip $1
 
 exit 0
 
