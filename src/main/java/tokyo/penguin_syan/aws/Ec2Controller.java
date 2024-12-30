@@ -6,12 +6,16 @@ import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsPro
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.DescribeInstanceStatusRequest;
+import software.amazon.awssdk.services.ec2.model.DescribeInstanceStatusResponse;
 import software.amazon.awssdk.services.ec2.model.DescribeInstancesRequest;
 import software.amazon.awssdk.services.ec2.model.DescribeInstancesResponse;
 import software.amazon.awssdk.services.ec2.model.Instance;
+import software.amazon.awssdk.services.ec2.model.InstanceStatus;
 import software.amazon.awssdk.services.ec2.model.RebootInstancesRequest;
 import software.amazon.awssdk.services.ec2.model.StartInstancesRequest;
 import software.amazon.awssdk.services.ec2.model.StopInstancesRequest;
+import software.amazon.awssdk.services.ec2.model.SummaryStatus;
 import tokyo.penguin_syan.PropertiesReader;
 
 public class Ec2Controller {
@@ -141,6 +145,37 @@ public class Ec2Controller {
 
         logger.info("AWS#instanceStatus end");
         return instanceStatusCode;
+    }
+
+
+    /**
+     * 指定したインスタンスのステータスチェックを確認する
+     * 
+     * @param instanceId
+     * @return
+     */
+    public boolean isAllInstanceCheckPassed(String instanceId) {
+        logger.info("AWS#instanceCheckResult start");
+
+        DescribeInstanceStatusRequest request2 =
+                DescribeInstanceStatusRequest.builder().instanceIds(instanceId).build();
+        DescribeInstanceStatusResponse response2 = ec2Client.describeInstanceStatus(request2);
+
+        InstanceStatus instanceStatus = response2.instanceStatuses().get(0);
+
+        if (instanceStatus.systemStatus().status() != SummaryStatus.OK) {
+            return false;
+        }
+
+        if (instanceStatus.attachedEbsStatus().status() != SummaryStatus.OK) {
+            return false;
+        }
+
+        if (instanceStatus.instanceStatus().status() != SummaryStatus.OK) {
+            return false;
+        }
+
+        return true;
     }
 
 }

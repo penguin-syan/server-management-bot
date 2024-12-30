@@ -1,0 +1,20 @@
+#place in /etc/systemd/system/factorio.service
+# systemctl start factorio.service
+# systemctl enable factorio.service   #autostarts the server
+# systemctl stop factorio.service
+# See https://gist.github.com/Drac346/9207d4cea2f9d38e2ad047347f4d91d2
+
+[Unit]
+Description=Factorio Headless Server
+After=network.target
+After=systemd-user-sessions.service
+After=network-online.target
+
+[Service]
+Type=simple
+User=factorio
+Group=factorio
+ExecStart=/opt/factorio-headless/factorio/bin/x64/factorio --start-server /opt/factorio-headless/savedata/savedata.zip --server-settings /opt/factorio-headless/savedata/server-settings.json
+
+[Install]
+WantedBy=multi-user.target
