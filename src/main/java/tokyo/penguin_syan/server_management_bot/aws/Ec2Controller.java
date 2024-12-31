@@ -2,8 +2,10 @@ package tokyo.penguin_syan.server_management_bot.aws;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.DescribeInstanceStatusRequest;
@@ -36,8 +38,11 @@ public class Ec2Controller {
             ec2Client = Ec2Client.builder().region(region)
                     .credentialsProvider(InstanceProfileCredentialsProvider.create()).build();
         } else {
+            AwsCredentials awsCredentials =
+                    AwsBasicCredentials.create(propertiesReader.getProperty("awsAccessKeyId"),
+                            propertiesReader.getProperty("awsSecretAccessKey"));
             ec2Client = Ec2Client.builder().region(region)
-                    .credentialsProvider(EnvironmentVariableCredentialsProvider.create()).build();
+                    .credentialsProvider(StaticCredentialsProvider.create(awsCredentials)).build();
         }
     }
 
