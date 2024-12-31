@@ -1,4 +1,4 @@
-package tokyo.penguin_syan.proxmox;
+package tokyo.penguin_syan.server_management_bot.proxmox;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -11,9 +11,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import tokyo.penguin_syan.PropertiesReader;
-import tokyo.penguin_syan.proxmox.httpclient.HttpRequestType;
-import tokyo.penguin_syan.proxmox.httpclient.HttpResponse;
+import tokyo.penguin_syan.server_management_bot.PropertiesReader;
+import tokyo.penguin_syan.server_management_bot.proxmox.httpclient.HttpRequestType;
+import tokyo.penguin_syan.server_management_bot.proxmox.httpclient.HttpResponse;
 
 public class ProxmoxController {
     private static PropertiesReader propertiesReader;

@@ -1,4 +1,4 @@
-package tokyo.penguin_syan.jda;
+package tokyo.penguin_syan.server_management_bot.jda;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,11 +19,11 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
-import tokyo.penguin_syan.PropertiesReader;
-import tokyo.penguin_syan.aws.Ec2ControlException;
-import tokyo.penguin_syan.aws.Ec2Controller;
-import tokyo.penguin_syan.proxmox.ProxmoxControlException;
-import tokyo.penguin_syan.proxmox.ProxmoxController;
+import tokyo.penguin_syan.server_management_bot.PropertiesReader;
+import tokyo.penguin_syan.server_management_bot.aws.Ec2ControlException;
+import tokyo.penguin_syan.server_management_bot.aws.Ec2Controller;
+import tokyo.penguin_syan.server_management_bot.proxmox.ProxmoxControlException;
+import tokyo.penguin_syan.server_management_bot.proxmox.ProxmoxController;
 
 public class DiscordBot extends ListenerAdapter {
     // TODO: slf4jの導入

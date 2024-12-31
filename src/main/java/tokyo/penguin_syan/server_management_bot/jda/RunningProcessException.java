@@ -1,4 +1,4 @@
-package tokyo.penguin_syan.jda;
+package tokyo.penguin_syan.server_management_bot.jda;
 
 public class RunningProcessException extends Exception {
 
