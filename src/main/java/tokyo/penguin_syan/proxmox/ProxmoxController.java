@@ -30,10 +30,11 @@ public class ProxmoxController {
     }
 
     /**
+     * 引数で渡したコマンドをQEMUエージェントを用いてVM上で実行する
      * 
      * @param commands 実行するコマンド
-     * @param contentType
-     * @return
+     * @param contentType ContentType.APPLICATION_JSONに固定
+     * @return QEMUエージェントがコマンドを実行した際のプロセスID
      * @throws Exception
      */
     public int execCommand(String[] command, ContentType contentType) throws Exception {
@@ -73,9 +74,10 @@ public class ProxmoxController {
 
 
     /**
+     * execCommandメソッド用のJSON形式のリクエストボディを作成する
      * 
-     * @param command
-     * @return
+     * @param command execCommandメソッドで実行するコマンド
+     * @return String型に変換したJSON形式のリクエストボディ
      */
     private String execRequestBody(String[] command) {
         logger.info("ProxmoxController#execRequestBody start");
@@ -92,10 +94,11 @@ public class ProxmoxController {
 
 
     /**
+     * httpclient5を用いてhttpリクエストを行う
      * 
-     * @param requestType
-     * @param url
-     * @return
+     * @param requestType リクエスト型（GET or POST）
+     * @param url リクエスト先のURL
+     * @return レスポンス
      * @throws Exception
      */
     private static String httpRequest(HttpRequestType requestType, String url) throws Exception {
@@ -105,12 +108,13 @@ public class ProxmoxController {
 
 
     /**
+     * httpclient5を用いてhttpリクエストを行う
      * 
-     * @param requestType
-     * @param url
+     * @param requestTypeリクエスト型（GET or POST）
+     * @param url リクエスト先のURL
      * @param body リクエストボディ（requestTypeがPOSTの時のみ有効）
      * @param bodyContentType リクエストボディのコンテンツタイプ（requestTypeがPOSTの時のみ有効）
-     * @return
+     * @return レスポンス
      * @throws Exception
      */
     private static String httpRequest(HttpRequestType requestType, String url, String body,

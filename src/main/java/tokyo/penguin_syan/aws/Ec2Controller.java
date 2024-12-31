@@ -178,4 +178,47 @@ public class Ec2Controller {
         return true;
     }
 
+
+    /**
+     * 指定したインスタンスのパブリックIP（IPv4）を取得する
+     * 
+     * @param instanceId パブリックIPを取得するインスタンスのID
+     * @return 指定したインスタンスのパブリックIP（IPv4）
+     */
+    public String instancePublicIpv4(String instanceId) {
+        logger.info("AWS#instancePublicIpv4 start");
+
+        DescribeInstancesRequest request =
+                DescribeInstancesRequest.builder().instanceIds(instanceId).build();
+        DescribeInstancesResponse response = ec2Client.describeInstances(request);
+
+        // インスタンスIDを指定しており検索結果も1つのみのため、Listで0番目を指定して設定値を取得する。
+        Instance instanceInfo = response.reservations().get(0).instances().get(0);
+        String instancePublicIpv4 = instanceInfo.publicIpAddress();
+
+        logger.info("AWS#instancePublicIpv4 end");
+        return instancePublicIpv4;
+    }
+
+    /**
+     * 指定したインスタンスのパブリックIP（IPv6）を取得する
+     * 
+     * @param instanceId パブリックIPを取得するインスタンスのID
+     * @return 指定したインスタンスのパブリックIP（IPv6）
+     */
+    public String instancePublicIpv6(String instanceId) {
+        logger.info("AWS#instancePublicIpv6 start");
+
+        DescribeInstancesRequest request =
+                DescribeInstancesRequest.builder().instanceIds(instanceId).build();
+        DescribeInstancesResponse response = ec2Client.describeInstances(request);
+
+        // インスタンスIDを指定しており検索結果も1つのみのため、Listで0番目を指定して設定値を取得する。
+        Instance instanceInfo = response.reservations().get(0).instances().get(0);
+        String instancePublicIpv6 = instanceInfo.ipv6Address();
+
+        logger.info("AWS#instancePublicIpv6 end");
+        return instancePublicIpv6;
+    }
+
 }

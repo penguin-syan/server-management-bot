@@ -3,6 +3,9 @@ package tokyo.penguin_syan.jda;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLHandshakeException;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.logging.log4j.LogManager;
@@ -10,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -28,8 +32,16 @@ public class DiscordBot extends ListenerAdapter {
     private static Ec2Controller ec2;
     private static ProxmoxController prmx;
     private static PropertiesReader propertiesReader;
-    private static boolean isDevelopMode;
+    private static ScheduledExecutorService scheduledExecutor;
+    private static MessageChannel messageChannel;
     private static String s3Storage;
+    private static boolean isDevelopMode;
+    private static int scheduledExecutorCounter;
+    private static final String savedataNoticeMessage = """
+            接続情報：
+              IPv4> %s
+              IPv6> %s
+            """;
 
     /**
      * DiscordBotのコンストラクタ.
@@ -53,6 +65,7 @@ public class DiscordBot extends ListenerAdapter {
         s3Storage = propertiesReader.getProperty("awsS3BucketName")
                 + propertiesReader.getProperty("awsS3SavedataPath");
 
+        scheduledExecutor = Executors.newScheduledThreadPool(1);
         isDevelopMode = "1".equals(propertiesReader.getProperty("developMode")) ? true : false;
 
         // コマンド変更に対応するため、過去にDiscordへ登録されたコマンドを削除.
@@ -98,6 +111,28 @@ public class DiscordBot extends ListenerAdapter {
                 ec2.startInstance(ec2InstanceId);
                 prmx.execCommand(command, ContentType.APPLICATION_JSON);
                 event.reply("サーバの起動を開始します").queue();
+
+                // インスタンス起動直後はPublicIPが割り振られないため、別スレッドで継続取得
+                scheduledExecutorCounter = 0;
+                messageChannel = event.getMessageChannel();
+                scheduledExecutor.scheduleAtFixedRate(() -> {
+                    logger.info("DiscordBot#scheduledExecutor start");
+                    String ipv4 = ec2.instancePublicIpv4(ec2InstanceId);
+                    String ipv6 = ec2.instancePublicIpv6(ec2InstanceId);
+                    if (ipv4 != null) {
+                        logger.debug("IPv4 of started instance: " + ipv4);
+                        messageChannel.sendMessage(String.format(savedataNoticeMessage, ipv4, ipv6))
+                                .queue();
+                        logger.info("DiscordBot#scheduledExecutor end");
+                        scheduledExecutor.shutdownNow();
+                    } else if (scheduledExecutorCounter > 10) {
+                        logger.warn("起動したインスタンスのパブリックIPを取得できませんでした");
+                        logger.info("DiscordBot#scheduledExecutor end");
+                        scheduledExecutor.shutdownNow();
+                    }
+                    scheduledExecutorCounter++;
+                    logger.info("DiscordBot#scheduledExecutor end (retry later)");
+                }, 5, 8, TimeUnit.SECONDS);
             } else if (Command.SHUTDOWN.getCommand().equals(event.getName())) {
                 logger.info("サーバの停止を開始します [Executed " + event.getMember().getUser() + "]");
                 String[] command = {"sh", "/usr/local/bin/factorio_stop.sh", s3Storage};
