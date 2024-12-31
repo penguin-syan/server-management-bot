@@ -152,7 +152,9 @@ public class DiscordBot extends ListenerAdapter {
             } else if (Command.LICENSE.getCommand().equals(event.getName())) {
                 event.reply(
                         """
-                                OSS Licenses
+                                **This**
+                                  https://github.com/penguin-syan/server-management-bot/blob/main/pom.xml
+                                **Imported OSS Licenses**
                                   AWS SKD for Java2: https://github.com/aws/aws-sdk-java-v2/blob/master/LICENSE.txt
                                   Discord JDA: https://github.com/discord-jda/JDA/blob/master/LICENSE
                                   Apache HttpClient5: https://github.com/apache/httpcomponents-client/blob/master/httpclient5/src/main/java/org/apache/hc/client5/http/classic/HttpClient.java
