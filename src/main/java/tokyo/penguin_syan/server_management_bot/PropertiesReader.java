@@ -1,4 +1,4 @@
-package tokyo.penguin_syan;
+package tokyo.penguin_syan.server_management_bot;
 
 import java.io.FileInputStream;
 import java.io.IOException;

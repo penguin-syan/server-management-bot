@@ -1,4 +1,4 @@
-package tokyo.penguin_syan.proxmox.httpclient;
+package tokyo.penguin_syan.server_management_bot.proxmox.httpclient;
 
 import java.io.IOException;
 import org.apache.hc.core5.http.HttpEntity;

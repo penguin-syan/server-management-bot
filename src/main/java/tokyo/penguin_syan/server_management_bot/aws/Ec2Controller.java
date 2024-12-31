@@ -1,4 +1,4 @@
-package tokyo.penguin_syan.aws;
+package tokyo.penguin_syan.server_management_bot.aws;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,7 +16,7 @@ import software.amazon.awssdk.services.ec2.model.RebootInstancesRequest;
 import software.amazon.awssdk.services.ec2.model.StartInstancesRequest;
 import software.amazon.awssdk.services.ec2.model.StopInstancesRequest;
 import software.amazon.awssdk.services.ec2.model.SummaryStatus;
-import tokyo.penguin_syan.PropertiesReader;
+import tokyo.penguin_syan.server_management_bot.PropertiesReader;
 
 public class Ec2Controller {
     private Region region;
