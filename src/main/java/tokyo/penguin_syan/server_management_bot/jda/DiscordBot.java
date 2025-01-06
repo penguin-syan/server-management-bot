@@ -170,17 +170,38 @@ public class DiscordBot extends ListenerAdapter {
         } catch (ProxmoxControlException e) {
             logger.warn(String.format("VMの操作を中断しました（%s）", e.getMessage()));
             event.reply(e.getMessage()).queue();
+            ec2StopWithProxmoxControlException(event, ec2InstanceId);
         } catch (SSLHandshakeException e) {
-            logger.error("リクエスト先の証明書が信頼できません", e.getMessage());
+            logger.error("リクエスト先の証明書が信頼できません", e);
             event.reply("リクエストの処理に失敗しました（TLS証明書 認証エラー）").queue();
-        } catch (RunningProcessException e) {
-            // なんかしないとね
+            ec2StopWithProxmoxControlException(event, ec2InstanceId);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             event.reply("想定外のエラーが発生しました").queue();
+            ec2StopWithProxmoxControlException(event, ec2InstanceId);
         }
 
         logger.info("DiscordBot#onSlashCommandInteraction end");
+    }
+
+    /**
+     * VM操作時にエラーが出た場合、起動コマンド実行時か判定し、先に起動したEC2を停止する
+     * 
+     * @param event スラッシュコマンドのイベント
+     * @param ec2InscanceId 停止するEC2のインスタンスID
+     */
+    private void ec2StopWithProxmoxControlException(SlashCommandInteractionEvent event,
+            String ec2InscanceId) {
+        logger.info("DescordBot#ec2StopWithProxmoxControlException start");
+        if (Command.BOOT.getCommand().equals(event.getName())) {
+            try {
+                logger.info("DiscordBot#ec2StopWithProxmoxControlException stop ec2");
+                ec2.stopInstance(ec2InscanceId);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+        logger.info("DiscordBot#ec2StopWithProxmoxControlException stop");
     }
 
 }
