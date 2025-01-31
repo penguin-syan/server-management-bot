@@ -24,11 +24,15 @@ import tokyo.penguin_syan.server_management_bot.aws.Ec2ControlException;
 import tokyo.penguin_syan.server_management_bot.aws.Ec2Controller;
 import tokyo.penguin_syan.server_management_bot.proxmox.ProxmoxControlException;
 import tokyo.penguin_syan.server_management_bot.proxmox.ProxmoxController;
+import tokyo.penguin_syan.server_management_bot.service.factorio.FactorioCommand;
+import tokyo.penguin_syan.server_management_bot.service.factorio.FactorioCommandWithOption;
+import tokyo.penguin_syan.server_management_bot.service.ktne.KtneService;
 
 public class DiscordBot extends ListenerAdapter {
     // TODO: slf4jの導入
     private static Logger logger = LogManager.getLogger();
     private static JDA jda;
+    private static KtneService ktneService;
     private static Ec2Controller ec2;
     private static ProxmoxController prmx;
     private static PropertiesReader propertiesReader;
@@ -37,7 +41,7 @@ public class DiscordBot extends ListenerAdapter {
     private static String s3Storage;
     private static boolean isDevelopMode;
     private static int scheduledExecutorCounter;
-    private static final String savedataNoticeMessage = """
+    private static final String SAVEDATA_NOTICE_MESSAGE = """
             接続情報：
               IPv4> `%s`
               IPv6> `%s`
@@ -60,6 +64,7 @@ public class DiscordBot extends ListenerAdapter {
                 .setActivity(Activity.customStatus(botStatus)).addEventListeners(new DiscordBot())
                 .build();
 
+
         ec2 = new Ec2Controller();
         prmx = new ProxmoxController();
         s3Storage = propertiesReader.getProperty("awsS3BucketName")
@@ -72,7 +77,7 @@ public class DiscordBot extends ListenerAdapter {
 
         // コマンドの変更に対応するため、動的にコマンド一覧を作成.
         List<SlashCommandData> commandData = new ArrayList<>();
-        for (Command command : Command.values()) {
+        for (FactorioCommand command : FactorioCommand.values()) {
             if ("develop".equals(command.getCommand()) && !isDevelopMode) {
                 continue;
             }
@@ -80,13 +85,19 @@ public class DiscordBot extends ListenerAdapter {
                     command.getDescription()));
             commandData.add(Commands.slash(command.getCommand(), command.getDescription()));
         }
-        for (CommandWithOption command : CommandWithOption.values()) {
+        for (FactorioCommandWithOption command : FactorioCommandWithOption.values()) {
             logger.debug(String.format("Initiated command {%s, %s}", command.getCommand(),
                     command.getDescription()));
             commandData.add(Commands.slash(command.getCommand(), command.getDescription())
                     .addOption(command.getOptionType(), command.getOptionName(),
                             command.getOptionExplanation()));
         }
+
+        if (propertiesReader.getProperty("discord.bot.command.ktne.enable").equals("1")) {
+            ktneService = new KtneService();
+            commandData = ktneService.initialCommands(commandData);
+        }
+
         commands.addCommands(commandData).queue();
 
         logger.info("DiscordBot#initial end");
@@ -104,7 +115,7 @@ public class DiscordBot extends ListenerAdapter {
 
         try {
             // コマンド別に処理を実行
-            if (Command.BOOT.getCommand().equals(event.getName())) {
+            if (FactorioCommand.BOOT.getCommand().equals(event.getName())) {
                 logger.info("サーバの起動を開始します [Executed " + event.getMember().getUser() + "]");
                 String[] command = {"sh", "/usr/local/bin/factorio_start.sh"};
                 ec2.startInstance(ec2InstanceId);
@@ -122,7 +133,8 @@ public class DiscordBot extends ListenerAdapter {
                     String ipv6 = ec2.instancePublicIpv6(ec2InstanceId);
                     if (ipv4 != null && ipv6 != null) {
                         logger.debug("IPv4 of started instance: " + ipv4);
-                        messageChannel.sendMessage(String.format(savedataNoticeMessage, ipv4, ipv6))
+                        messageChannel
+                                .sendMessage(String.format(SAVEDATA_NOTICE_MESSAGE, ipv4, ipv6))
                                 .queue();
                         logger.info("DiscordBot#scheduledExecutor end");
                         scheduledExecutor.shutdownNow();
@@ -137,29 +149,32 @@ public class DiscordBot extends ListenerAdapter {
                         logger.info("DiscordBot#scheduledExecutor end (retry later)");
                     }
                 }, 5, 8, TimeUnit.SECONDS);
-            } else if (Command.SHUTDOWN.getCommand().equals(event.getName())) {
+            } else if (FactorioCommand.SHUTDOWN.getCommand().equals(event.getName())) {
                 logger.info("サーバの停止を開始します [Executed " + event.getMember().getUser() + "]");
                 String[] command = {"sh", "/usr/local/bin/factorio_stop.sh", s3Storage};
                 ec2.stopInstance(ec2InstanceId);
                 int pid = prmx.execCommand(command, ContentType.APPLICATION_JSON);
                 event.reply("サーバの停止を開始します").queue();
                 prmx.execStatus(pid);
-            } else if (Command.DEVELOP.getCommand().equals(event.getName())) {
+            } else if (FactorioCommand.DEVELOP.getCommand().equals(event.getName())) {
                 String[] command = {"systemctl", "status", "factorio"};
                 int pid = prmx.execCommand(command, ContentType.APPLICATION_JSON);
                 prmx.execStatus(pid);
                 event.reply("develop").queue();
-            } else if (Command.LICENSE.getCommand().equals(event.getName())) {
+            } else if (FactorioCommand.LICENSE.getCommand().equals(event.getName())) {
+                logger.info("ライセンスを表示します[Executed " + event.getMember().getUser() + "]");
                 event.reply(
                         """
                                 **This**
-                                  https://github.com/penguin-syan/server-management-bot/blob/main/pom.xml
+                                  https://github.com/penguin-syan/server-management-bot/blob/main/LICENSE
                                 **Imported OSS Licenses**
                                   AWS SKD for Java2: https://github.com/aws/aws-sdk-java-v2/blob/master/LICENSE.txt
                                   Discord JDA: https://github.com/discord-jda/JDA/blob/master/LICENSE
                                   Apache HttpClient5: https://github.com/apache/httpcomponents-client/blob/master/httpclient5/src/main/java/org/apache/hc/client5/http/classic/HttpClient.java
                                 """)
                         .queue();
+            } else if (ktneService.onSlashCommandHandler(event)) {
+                // elseに入ってしまってKTNE系のコマンド処理ができない為、一時的に追加
             } else {
                 throw new Exception(
                         String.format("イベントハンドラ上で未定義のコマンドが送信されました（%s）", event.getName()));
@@ -181,6 +196,13 @@ public class DiscordBot extends ListenerAdapter {
             ec2StopWithProxmoxControlException(event, ec2InstanceId);
         }
 
+        // boolean needMatchCommand = true;
+        // if (propertiesReader.getProperty("discord.bot.command.ktne.enable").equals("1")) {
+        // if (ktneService.onSlashCommandHandler(event)) {
+        // needMatchCommand = false;
+        // }
+        // }
+
         logger.info("DiscordBot#onSlashCommandInteraction end");
     }
 
@@ -193,7 +215,7 @@ public class DiscordBot extends ListenerAdapter {
     private void ec2StopWithProxmoxControlException(SlashCommandInteractionEvent event,
             String ec2InscanceId) {
         logger.info("DescordBot#ec2StopWithProxmoxControlException start");
-        if (Command.BOOT.getCommand().equals(event.getName())) {
+        if (FactorioCommand.BOOT.getCommand().equals(event.getName())) {
             try {
                 logger.info("DiscordBot#ec2StopWithProxmoxControlException stop ec2");
                 ec2.stopInstance(ec2InscanceId);
