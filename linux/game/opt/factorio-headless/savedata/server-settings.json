@@ -1,0 +1,9 @@
+{
+    "name": "factorio-server",
+    "description": "factorio headless server",
+    "max_players": "5",
+    "visibility": "hidden",
+    "game_password": "PASSWORD",
+    "verify_user_identity": true,
+    "autosave_interval": 60
+}

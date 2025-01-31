@@ -1,0 +1,16 @@
+# Place in /etc/systemd/system/socat_factorio.service on gvia
+
+[Unit]
+Description=redirect connection to Factorio Headless Server
+After=network.target
+After=systemd-user-sessions.service
+After=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+ExecStart=socat UDP6-LISTEN:34197,reuseaddr,fork UDP4:{REPLACE_GAMESERVER_IP}:34197
+
+[Install]
+WantedBy=multi-user.target

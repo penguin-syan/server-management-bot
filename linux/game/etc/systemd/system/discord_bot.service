@@ -1,0 +1,16 @@
+# Place in /etc/systemd/system/discord_bot.service
+
+[Unit]
+Description=Factorio Headless Server Management Bot
+After=network.target
+After=systemd-user-sessions.service
+After=network-online.target
+
+[Service]
+Type=simple
+User=factorio
+Group=factorio
+ExecStart=java -jar /var/lib/discordBot/Server-Management-Bot-jar-with-dependencies.jar
+
+[Install]
+WantedBy=multi-user.target
