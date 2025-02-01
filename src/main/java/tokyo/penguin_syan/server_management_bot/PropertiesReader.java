@@ -13,14 +13,17 @@ public class PropertiesReader {
     private Logger logger = LogManager.getLogger();
 
     public PropertiesReader() {
+        logger.info("PropertiesReader#<init> start");
         properties = new Properties();
 
         try {
+            logger.debug(String.format("Load setting file: %s", SETTING_FILE_PATH));
             InputStream inputStream = new FileInputStream(SETTING_FILE_PATH);
             properties.load(inputStream);
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
+        logger.info("PropertiesReader#<init> end");
     }
 
     public String getProperty(String key) {
