@@ -1,9 +1,9 @@
-package tokyo.penguin_syan.server_management_bot.jda;
+package tokyo.penguin_syan.server_management_bot.service.factorio;
 
 import lombok.Getter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 
-public enum CommandWithOption {
+public enum FactorioCommandWithOption {
     ROLLBACK("rollback", "セーブデータを指定ファイルにロールバックする", OptionType.STRING, "セーブデータ", "セーブデータのS3 URI",
             true);
 
@@ -20,7 +20,7 @@ public enum CommandWithOption {
     @Getter
     private boolean required;
 
-    private CommandWithOption(String command, String description, OptionType optionType,
+    private FactorioCommandWithOption(String command, String description, OptionType optionType,
             String optionName, String optionExplanation, boolean required) {
         this.command = command;
         this.description = description;

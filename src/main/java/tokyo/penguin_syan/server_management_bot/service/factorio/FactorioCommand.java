@@ -1,17 +1,17 @@
-package tokyo.penguin_syan.server_management_bot.jda;
+package tokyo.penguin_syan.server_management_bot.service.factorio;
 
 import lombok.Getter;
 
-public enum Command {
+public enum FactorioCommand {
     BOOT("boot", "すべてのサーバ群を起動する"), SHUTDOWN("shutdown", "すべてのサーバ群を停止する"), LICENSE("license",
-            "本Botに使われているOSSのラインセンスを確認する"), DEVELOP("develop", "開発時確認用");
+            "本Botに使われているOSSのラインセンスを確認する");
 
     @Getter
     private String command;
     @Getter
     private String description;
 
-    private Command(String command, String description) {
+    private FactorioCommand(String command, String description) {
         this.command = command;
         this.description = description;
     }
