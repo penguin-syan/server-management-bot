@@ -9,11 +9,11 @@ public interface Service {
     /**
      * DiscordBotにおけるコマンドの初期化
      * 
-     * @param commandDatas コマンドの一覧追加先
+     * @param commandData コマンドの一覧追加先
      * @return 一覧追加後のコマンドリスト
      * @see tokyo.penguin_syan.server_management_bot.jda.DiscordBot
      */
-    public List<SlashCommandData> initialCommands(List<SlashCommandData> commandDatas);
+    public List<SlashCommandData> initialCommands(List<SlashCommandData> commandData);
 
     /**
      * スラッシュコマンドの処理を行うイベントハンドラ
