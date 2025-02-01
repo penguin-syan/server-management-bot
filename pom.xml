@@ -6,7 +6,7 @@
 
     <groupId>tokyo.penguin_syan</groupId>
     <artifactId>server_management_bot</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -19,7 +19,13 @@
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>5.2.1</version>
+            <version>5.2.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>club.minnced</groupId>
+                    <artifactId>opus-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     
         <!-- AWS SDK for Java 2.x -->
