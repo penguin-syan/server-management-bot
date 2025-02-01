@@ -80,7 +80,7 @@ public class KtneService implements Service {
             KtnePlayer selectedPlayer;
             try {
                 selectedPlayer = roulet();
-            } catch (NotEnoughPlayerException e) {
+            } catch (NotEnoughPlayerException | MaxRetryAttemptsException e) {
                 logger.warn(e.getMessage());
                 event.reply(e.getMessage()).queue();
                 return isCommandHit;
@@ -213,8 +213,9 @@ public class KtneService implements Service {
      * 
      * @return 指示役・解体役のプレイヤー
      * @throws NotEnoughPlayerException
+     * @throws MaxRetryAttemptsException
      */
-    public KtnePlayer roulet() throws NotEnoughPlayerException {
+    public KtnePlayer roulet() throws NotEnoughPlayerException, MaxRetryAttemptsException {
         logger.info("KtneService#roulet start");
 
         // 登録済み人数のチェックと、だめならExceptionを返すようにする
@@ -254,6 +255,7 @@ public class KtneService implements Service {
 
         if (isPlayerDuplicate) {
             logger.error("規定の試行回数ではルーレット処理が完了しませんでした");
+            throw new MaxRetryAttemptsException();
         }
 
 
