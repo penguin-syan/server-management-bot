@@ -1,7 +1,9 @@
 package tokyo.penguin_syan.server_management_bot.service.ktne;
 
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 
+@Log4j2
 public class KtnePlayer {
     @Getter
     private String operater;
@@ -16,7 +18,9 @@ public class KtnePlayer {
      * @throws DuplicateSelectedPlayerException
      */
     protected void setOperater(String operater) throws DuplicateSelectedPlayerException {
+        log.info("KtnePlayer#setOperater start (operater :", operater, ")");
         if (this.defuser != null && this.defuser == operater) {
+            log.warn(operater);
             throw new DuplicateSelectedPlayerException();
         } else {
             this.operater = operater;

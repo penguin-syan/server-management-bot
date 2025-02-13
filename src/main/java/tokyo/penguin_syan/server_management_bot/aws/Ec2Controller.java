@@ -1,7 +1,6 @@
 package tokyo.penguin_syan.server_management_bot.aws;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.log4j.Log4j2;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
@@ -20,12 +19,12 @@ import software.amazon.awssdk.services.ec2.model.StopInstancesRequest;
 import software.amazon.awssdk.services.ec2.model.SummaryStatus;
 import tokyo.penguin_syan.server_management_bot.PropertiesReader;
 
+@Log4j2
 public class Ec2Controller {
     private Region region;
     private Ec2Client ec2Client;
 
     private static PropertiesReader propertiesReader;
-    private static Logger logger = LogManager.getLogger();
 
     /**
      * Ec2Controllerのコンストラクタ
@@ -53,14 +52,14 @@ public class Ec2Controller {
      * @throws Exception
      */
     public void startInstance(String instanceId) throws Exception {
-        logger.info("AWS#startInstance start");
+        log.info("AWS#startInstance start");
         int instanceStatus = instanceStatus(instanceId);
 
         if (instanceStatus <= 16) {
-            logger.info("AWS#startInstance canceled (pending or running)");
+            log.info("AWS#startInstance canceled (pending or running)");
             throw new Ec2ControlException("既に起動済みです");
         } else if (instanceStatus == 48) {
-            logger.warn("AWS#startInstance canceled (terminated)");
+            log.warn("AWS#startInstance canceled (terminated)");
             throw new Ec2ControlException("インスタンスが削除されています");
         }
 
@@ -69,11 +68,11 @@ public class Ec2Controller {
                     StartInstancesRequest.builder().instanceIds(instanceId).build();
             ec2Client.startInstances(startRequest);
         } catch (Exception e) {
-            logger.error("AWS#startInstance abort");
+            log.error("AWS#startInstance abort");
             throw e;
         }
 
-        logger.info(String.format("AWS#startInstance end [Instance-id:%s]", instanceId));
+        log.info(String.format("AWS#startInstance end [Instance-id:%s]", instanceId));
     }
 
     /**
@@ -83,11 +82,11 @@ public class Ec2Controller {
      * @throws Exception
      */
     public void stopInstance(String instanceId) throws Exception {
-        logger.info("AWS#stopInstance start");
+        log.info("AWS#stopInstance start");
         int instanceStatus = instanceStatus(instanceId);
 
         if (instanceStatus >= 32) {
-            logger.info("AWS#stopInstance canceled (shutting-down or stopped)");
+            log.info("AWS#stopInstance canceled (shutting-down or stopped)");
             throw new Ec2ControlException("既に停止済みです");
         }
 
@@ -96,11 +95,11 @@ public class Ec2Controller {
                     StopInstancesRequest.builder().instanceIds(instanceId).build();
             ec2Client.stopInstances(stopRequest);
         } catch (Exception e) {
-            logger.error("AWS#stopInstance abort");
+            log.error("AWS#stopInstance abort");
             throw e;
         }
 
-        logger.info(String.format("AWS#endInstance end [Instance-id:%s]", instanceId));
+        log.info(String.format("AWS#endInstance end [Instance-id:%s]", instanceId));
     }
 
     /**
@@ -110,11 +109,11 @@ public class Ec2Controller {
      * @throws Exception
      */
     public void rebootInstance(String instanceId) throws Exception {
-        logger.info("AWS#rebootInstance start");
+        log.info("AWS#rebootInstance start");
         int instanceStatus = instanceStatus(instanceId);
 
         if (instanceStatus != 16) {
-            logger.info("AWS#stopInstance canceled (not running)");
+            log.info("AWS#stopInstance canceled (not running)");
             throw new Ec2ControlException("インスタンスが実行中ではありません");
         }
 
@@ -123,11 +122,11 @@ public class Ec2Controller {
                     RebootInstancesRequest.builder().instanceIds(instanceId).build();
             ec2Client.rebootInstances(rebootRequest);
         } catch (Exception e) {
-            logger.error("AWS#rebootInstance abort");
+            log.error("AWS#rebootInstance abort");
             throw e;
         }
 
-        logger.info(String.format("AWS#rebootInstance end [Instance-id:%s]", instanceId));
+        log.info(String.format("AWS#rebootInstance end [Instance-id:%s]", instanceId));
     }
 
     /**
@@ -138,7 +137,7 @@ public class Ec2Controller {
      *         80:stopped）
      */
     public int instanceStatus(String instanceId) throws Exception {
-        logger.info("AWS#instanceStatus start");
+        log.info("AWS#instanceStatus start");
 
         DescribeInstancesRequest request =
                 DescribeInstancesRequest.builder().instanceIds(instanceId).build();
@@ -148,7 +147,7 @@ public class Ec2Controller {
         Instance instanceInfo = response.reservations().get(0).instances().get(0);
         int instanceStatusCode = instanceInfo.state().code();
 
-        logger.info("AWS#instanceStatus end");
+        log.info("AWS#instanceStatus end");
         return instanceStatusCode;
     }
 
@@ -160,7 +159,7 @@ public class Ec2Controller {
      * @return
      */
     public boolean isAllInstanceCheckPassed(String instanceId) {
-        logger.info("AWS#instanceCheckResult start");
+        log.info("AWS#instanceCheckResult start");
 
         DescribeInstanceStatusRequest request2 =
                 DescribeInstanceStatusRequest.builder().instanceIds(instanceId).build();
@@ -191,7 +190,7 @@ public class Ec2Controller {
      * @return 指定したインスタンスのパブリックIP（IPv4）
      */
     public String instancePublicIpv4(String instanceId) {
-        logger.info("AWS#instancePublicIpv4 start");
+        log.info("AWS#instancePublicIpv4 start");
 
         DescribeInstancesRequest request =
                 DescribeInstancesRequest.builder().instanceIds(instanceId).build();
@@ -201,7 +200,7 @@ public class Ec2Controller {
         Instance instanceInfo = response.reservations().get(0).instances().get(0);
         String instancePublicIpv4 = instanceInfo.publicIpAddress();
 
-        logger.info("AWS#instancePublicIpv4 end");
+        log.info("AWS#instancePublicIpv4 end");
         return instancePublicIpv4;
     }
 
@@ -212,7 +211,7 @@ public class Ec2Controller {
      * @return 指定したインスタンスのパブリックIP（IPv6）
      */
     public String instancePublicIpv6(String instanceId) {
-        logger.info("AWS#instancePublicIpv6 start");
+        log.info("AWS#instancePublicIpv6 start");
 
         DescribeInstancesRequest request =
                 DescribeInstancesRequest.builder().instanceIds(instanceId).build();
@@ -222,7 +221,7 @@ public class Ec2Controller {
         Instance instanceInfo = response.reservations().get(0).instances().get(0);
         String instancePublicIpv6 = instanceInfo.ipv6Address();
 
-        logger.info("AWS#instancePublicIpv6 end");
+        log.info("AWS#instancePublicIpv6 end");
         return instancePublicIpv6;
     }
 

@@ -3,8 +3,7 @@ package tokyo.penguin_syan.server_management_bot.jda;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.log4j.Log4j2;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -16,9 +15,8 @@ import tokyo.penguin_syan.server_management_bot.PropertiesReader;
 import tokyo.penguin_syan.server_management_bot.service.factorio.FactorioService;
 import tokyo.penguin_syan.server_management_bot.service.ktne.KtneService;
 
+@Log4j2
 public class DiscordBot extends ListenerAdapter {
-    // TODO: slf4jの導入
-    private static Logger logger = LogManager.getLogger();
     private static JDA jda;
     private static FactorioService factorioService;
     private static KtneService ktneService;
@@ -30,7 +28,7 @@ public class DiscordBot extends ListenerAdapter {
      * 各種設定ファイルを読み込み、Discord用のBotを起動する.
      */
     public static void initial() {
-        logger.info("DiscordBot#initial start");
+        log.info("DiscordBot#initial start");
 
         // 各種設定は外部ファイルから読み込む
         propertiesReader = new PropertiesReader();
@@ -57,7 +55,7 @@ public class DiscordBot extends ListenerAdapter {
 
         commands.addCommands(commandData).queue();
 
-        logger.info("DiscordBot#initial end");
+        log.info("DiscordBot#initial end");
     }
 
     /**
@@ -67,7 +65,7 @@ public class DiscordBot extends ListenerAdapter {
      */
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        logger.info("DiscordBot#onSlashCommandInteraction start");
+        log.info("DiscordBot#onSlashCommandInteraction start");
 
         boolean needMatchCommand = true;
         if (propertiesReader.getProperty("discord.bot.command.ktne.enable").equals("1")) {
@@ -82,11 +80,11 @@ public class DiscordBot extends ListenerAdapter {
             }
         }
         if (needMatchCommand) {
-            logger.error(String.format("イベントハンドラ上で未定義のコマンドが送信されました（%s）", event.getName()));
+            log.error(String.format("イベントハンドラ上で未定義のコマンドが送信されました（%s）", event.getName()));
             event.reply("想定外のエラーが発生しました。").queue();
         }
 
-        logger.info("DiscordBot#onSlashCommandInteraction end");
+        log.info("DiscordBot#onSlashCommandInteraction end");
     }
 
 }
