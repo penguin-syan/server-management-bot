@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import software.amazon.awssdk.services.ec2.model.Ec2Exception;
 import tokyo.penguin_syan.server_management_bot.PropertiesReader;
 import tokyo.penguin_syan.server_management_bot.aws.Ec2ControlException;
 import tokyo.penguin_syan.server_management_bot.aws.Ec2Controller;
@@ -155,6 +156,9 @@ public class FactorioService implements Service {
             log.error("リクエスト先の証明書が信頼できません", e);
             event.reply("リクエストの処理に失敗しました（TLS証明書 認証エラー）").queue();
             ec2StopWithProxmoxControlException(event, ec2InstanceId);
+        } catch (Ec2Exception e) {
+            log.error(e.getMessage(), e);
+            event.reply("想定外のエラーが発生しました\n※短時間の間に複数操作を行ったため、踏み台サーバが操作を受け付けなかった可能性があります").queue();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             event.reply("想定外のエラーが発生しました").queue();
