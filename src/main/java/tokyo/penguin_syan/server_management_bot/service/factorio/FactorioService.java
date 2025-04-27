@@ -6,8 +6,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLHandshakeException;
 import org.apache.hc.core5.http.ContentType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -19,8 +18,8 @@ import tokyo.penguin_syan.server_management_bot.proxmox.ProxmoxControlException;
 import tokyo.penguin_syan.server_management_bot.proxmox.ProxmoxController;
 import tokyo.penguin_syan.server_management_bot.service.Service;
 
+@Slf4j
 public class FactorioService implements Service {
-    private static Logger logger = LogManager.getLogger();
     private static Ec2Controller ec2;
     private static ProxmoxController prmx;
     private static PropertiesReader propertiesReader;
@@ -39,7 +38,7 @@ public class FactorioService implements Service {
      * FactorioServiceのコンストラクタ
      */
     public FactorioService() {
-        logger.info("FactorioService#<init> start");
+        log.info("FactorioService#<init> start");
         propertiesReader = new PropertiesReader();
 
         ec2 = new Ec2Controller();
@@ -47,28 +46,28 @@ public class FactorioService implements Service {
         s3Storage = propertiesReader.getProperty("awsS3BucketName")
                 + propertiesReader.getProperty("awsS3SavedataPath");
 
-        logger.info("FactorioService#<init> end");
+        log.info("FactorioService#<init> end");
     }
 
 
     @Override
     public List<SlashCommandData> initialCommands(List<SlashCommandData> commandData) {
-        logger.info("FactorioService#initialCommands start");
+        log.info("FactorioService#initialCommands start");
 
         for (FactorioCommand command : FactorioCommand.values()) {
-            logger.debug(String.format("Initiated command {%s, %s}", command.getCommand(),
+            log.debug(String.format("Initiated command {%s, %s}", command.getCommand(),
                     command.getDescription()));
             commandData.add(Commands.slash(command.getCommand(), command.getDescription()));
         }
         for (FactorioCommandWithOption command : FactorioCommandWithOption.values()) {
-            logger.debug(String.format("Initiated command {%s, %s}", command.getCommand(),
+            log.debug(String.format("Initiated command {%s, %s}", command.getCommand(),
                     command.getDescription()));
             commandData.add(Commands.slash(command.getCommand(), command.getDescription())
                     .addOption(command.getOptionType(), command.getOptionName(),
                             command.getOptionExplanation()));
         }
 
-        logger.info("FactorioService#initialCommands end");
+        log.info("FactorioService#initialCommands end");
         return commandData;
     }
 
@@ -80,14 +79,14 @@ public class FactorioService implements Service {
      */
     @Override
     public boolean onSlashCommandHandler(SlashCommandInteractionEvent event) {
-        logger.info("FactorioService#onSlashCommandInteraction start");
+        log.info("FactorioService#onSlashCommandInteraction start");
         String ec2InstanceId = propertiesReader.getProperty("awsInstanceId");
         boolean isCommandHit = false;
 
         try {
             // コマンド別に処理を実行
             if (FactorioCommand.BOOT.getCommand().equals(event.getName())) {
-                logger.info("サーバの起動を開始します [Executed " + event.getMember().getUser() + "]");
+                log.info("サーバの起動を開始します [Executed " + event.getMember().getUser() + "]");
                 isCommandHit = true;
 
                 String[] command = {"sh", "/usr/local/bin/factorio_start.sh"};
@@ -101,29 +100,29 @@ public class FactorioService implements Service {
                 // Poolしているスレッド数が不足するので、都度インスタンス化しなおす
                 scheduledExecutor = Executors.newScheduledThreadPool(1);
                 scheduledExecutor.scheduleAtFixedRate(() -> {
-                    logger.info("DiscordBot#scheduledExecutor start");
+                    log.info("DiscordBot#scheduledExecutor start");
                     String ipv4 = ec2.instancePublicIpv4(ec2InstanceId);
                     String ipv6 = ec2.instancePublicIpv6(ec2InstanceId);
                     if (ipv4 != null && ipv6 != null) {
-                        logger.debug("IPv4 of started instance: " + ipv4);
+                        log.debug("IPv4 of started instance: " + ipv4);
                         messageChannel
                                 .sendMessage(String.format(SAVEDATA_NOTICE_MESSAGE, ipv4, ipv6))
                                 .queue();
-                        logger.info("DiscordBot#scheduledExecutor end");
+                        log.info("DiscordBot#scheduledExecutor end");
                         scheduledExecutor.shutdownNow();
                         scheduledExecutor = null;
                     } else if (scheduledExecutorCounter > 10) {
-                        logger.warn("起動したインスタンスのパブリックIPを取得できませんでした");
-                        logger.info("DiscordBot#scheduledExecutor end (with error)");
+                        log.warn("起動したインスタンスのパブリックIPを取得できませんでした");
+                        log.info("DiscordBot#scheduledExecutor end (with error)");
                         scheduledExecutor.shutdownNow();
                         scheduledExecutor = null;
                     } else {
                         scheduledExecutorCounter++;
-                        logger.info("DiscordBot#scheduledExecutor end (retry later)");
+                        log.info("DiscordBot#scheduledExecutor end (retry later)");
                     }
                 }, 5, 8, TimeUnit.SECONDS);
             } else if (FactorioCommand.SHUTDOWN.getCommand().equals(event.getName())) {
-                logger.info("サーバの停止を開始します [Executed " + event.getMember().getUser() + "]");
+                log.info("サーバの停止を開始します [Executed " + event.getMember().getUser() + "]");
                 isCommandHit = true;
 
                 String[] command = {"sh", "/usr/local/bin/factorio_stop.sh", s3Storage};
@@ -132,7 +131,7 @@ public class FactorioService implements Service {
                 event.reply("サーバの停止を開始します").queue();
                 prmx.execStatus(pid);
             } else if (FactorioCommand.LICENSE.getCommand().equals(event.getName())) {
-                logger.info("ライセンスを表示します[Executed " + event.getMember().getUser() + "]");
+                log.info("ライセンスを表示します[Executed " + event.getMember().getUser() + "]");
                 isCommandHit = true;
                 event.reply(
                         """
@@ -146,23 +145,23 @@ public class FactorioService implements Service {
                         .queue();
             }
         } catch (Ec2ControlException e) {
-            logger.warn(String.format("インスタンスの操作を中断しました（%s）", e.getMessage()));
+            log.warn(String.format("インスタンスの操作を中断しました（%s）", e.getMessage()));
             event.reply(e.getMessage()).queue();
         } catch (ProxmoxControlException e) {
-            logger.warn(String.format("VMの操作を中断しました（%s）", e.getMessage()));
+            log.warn(String.format("VMの操作を中断しました（%s）", e.getMessage()));
             event.reply(e.getMessage()).queue();
             ec2StopWithProxmoxControlException(event, ec2InstanceId);
         } catch (SSLHandshakeException e) {
-            logger.error("リクエスト先の証明書が信頼できません", e);
+            log.error("リクエスト先の証明書が信頼できません", e);
             event.reply("リクエストの処理に失敗しました（TLS証明書 認証エラー）").queue();
             ec2StopWithProxmoxControlException(event, ec2InstanceId);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             event.reply("想定外のエラーが発生しました").queue();
             ec2StopWithProxmoxControlException(event, ec2InstanceId);
         }
 
-        logger.info("FactorioService#onSlashCommandInteraction end");
+        log.info("FactorioService#onSlashCommandInteraction end");
         return isCommandHit;
     }
 
@@ -174,16 +173,16 @@ public class FactorioService implements Service {
      */
     private void ec2StopWithProxmoxControlException(SlashCommandInteractionEvent event,
             String ec2InstanceId) {
-        logger.info("DescordBot#ec2StopWithProxmoxControlException start");
+        log.info("DescordBot#ec2StopWithProxmoxControlException start");
         if (FactorioCommand.BOOT.getCommand().equals(event.getName())) {
             try {
-                logger.info("DiscordBot#ec2StopWithProxmoxControlException stop ec2");
+                log.info("DiscordBot#ec2StopWithProxmoxControlException stop ec2");
                 ec2.stopInstance(ec2InstanceId);
             } catch (Exception e) {
-                logger.error(e.getMessage(), e);
+                log.error(e.getMessage(), e);
             }
         }
-        logger.info("DiscordBot#ec2StopWithProxmoxControlException stop");
+        log.info("DiscordBot#ec2StopWithProxmoxControlException stop");
     }
 
 
